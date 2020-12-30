@@ -3,18 +3,31 @@ services:
   reverse-proxy:
     image: traefik:v2.3
     # Enables the web UI and tells Traefik to listen to docker
-    command: --api.insecure=true --providers.docker
+    command:
+      # - --log.level=DEBUG
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      # - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.myresolver.acme.email=anhkhoa2890@gmail.com
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
     ports:
       # The HTTP port
-      - 81:80
+      - 81:443
       # The Web UI (enabled by --api.insecure=true)
       - 9090:8080
     volumes:
       # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
+      # Create a letsencrypt dir within the folder where the docker-compose file is
+      - ./letsencrypt:/letsencrypt
   web:
     build:
       context: web
     labels:
-      - "traefik.http.routers.web.rule=Host(`khoa.com`)"
-    
+      - traefik.enable=true
+      - traefik.http.routers.web.rule=Host(`khoa.htactive.com`)
+      - traefik.http.routers.web.entrypoints=websecure
+      - traefik.http.routers.web.tls.certresolver=myresolver
