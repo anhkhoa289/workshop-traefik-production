@@ -19,6 +19,9 @@ services:
     volumes:
       - ./letsencrypt:/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - web
+      - default
     labels:
       traefik.enable: true
       traefik.http.routers.dashboard.rule: Host(`$dashboard`)
@@ -44,3 +47,8 @@ services:
       traefik.http.routers.web.rule: Host(`$web`)
       traefik.http.routers.web.entrypoints: websecure
       traefik.http.routers.web.tls.certresolver: myresolver
+
+
+networks:
+  web:
+    external: true
