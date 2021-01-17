@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+
+  reverse-proxy:
+    image: traefik:v2.3
+    command:
+      #- --log.level=DEBUG
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      # - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.myresolver.acme.email=$acme_email
+      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+    ports:
+      - 443:443
+    volumes:
+      - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    labels:
+      traefik.enable: true
+      traefik.http.routers.dashboard.rule: Host(`$dashboard`)
+      traefik.http.routers.dashboard.entrypoints: websecure
+      traefik.http.routers.dashboard.tls.certresolver: myresolver
+      traefik.http.routers.dashboard.service: api@internal
+      traefik.http.routers.dashboard.middlewares: dashboard_auth
+      traefik.http.middlewares.dashboard_auth.basicauth.users: username:$$apr1$$2/jvBq52$$3w4QFIcbq4PbfLRQgWGnz/
+
+  whoami:
+    image: traefik/whoami
+    labels:
+      traefik.enable: true
+      traefik.http.routers.whoami.rule: Host(`$whoami`)
+      traefik.http.routers.whoami.entrypoints: websecure
+      traefik.http.routers.whoami.tls.certresolver: myresolver
+
+  web:
+    build:
+      context: web
+    labels:
+      traefik.enable: true
+      traefik.http.routers.web.rule: Host(`$web`)
+      traefik.http.routers.web.entrypoints: websecure
+      traefik.http.routers.web.tls.certresolver: myresolver

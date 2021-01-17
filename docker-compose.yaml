@@ -1,27 +1,29 @@
-version: "3.8"
+version: "3.9"
+
 services:
+
   reverse-proxy:
     image: traefik:v2.3
-    command: --api.insecure=true --providers.docker
+    command:
+      - --api.insecure=true
+      - --providers.docker
     ports:
       - "80:80"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     labels:
-      - "traefik.http.routers.api.rule=Host(`$dashboard`)"
-      # - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.routers.api.service=api@internal"
-      - "traefik.http.routers.api.middlewares=myAuth"
-      # - "traefik.http.routers.api.tls"
-      - "traefik.http.middlewares.myAuth.basicauth.users=username:$$apr1$$2/jvBq52$$3w4QFIcbq4PbfLRQgWGnz/"
-  
+      traefik.http.routers.dashboard_auth.rule: Host(`$dashboard`)
+      traefik.http.routers.dashboard_auth.service: api@internal
+      traefik.http.routers.dashboard_auth.middlewares: dashboard_auth
+      traefik.http.middlewares.dashboard_auth.basicauth.users: username:$$apr1$$2/jvBq52$$3w4QFIcbq4PbfLRQgWGnz/
+
   whoami:
     image: traefik/whoami
     labels:
-      - "traefik.http.routers.whoami.rule=Host(`$whoami`)"
+      traefik.http.routers.whoami.rule: Host(`$whoami`)
 
   web:
     build:
       context: web
     labels:
-      - "traefik.http.routers.web.rule=Host(`$web`)"
+      traefik.http.routers.web.rule: Host(`$web`)
