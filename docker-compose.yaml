@@ -2,32 +2,26 @@ version: "3.8"
 services:
   reverse-proxy:
     image: traefik:v2.3
-    # Enables the web UI and tells Traefik to listen to docker
-    command:
-      # - --log.level=DEBUG
-      - --api.insecure=true
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.myresolver.acme.tlschallenge=true
-      # - --certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
-      - --certificatesresolvers.myresolver.acme.email=anhkhoa2890@gmail.com
-      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
+    command: --api.insecure=true --providers.docker
     ports:
-      # The HTTP port
-      - 81:443
-      # The Web UI (enabled by --api.insecure=true)
-      - 9090:8080
+      - "80:80"
     volumes:
-      # So that Traefik can listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock
-      # Create a letsencrypt dir within the folder where the docker-compose file is
-      - ./letsencrypt:/letsencrypt
+    labels:
+      - "traefik.http.routers.api.rule=Host(`$dashboard`)"
+      # - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.routers.api.service=api@internal"
+      - "traefik.http.routers.api.middlewares=myAuth"
+      # - "traefik.http.routers.api.tls"
+      - "traefik.http.middlewares.myAuth.basicauth.users=username:$$apr1$$2/jvBq52$$3w4QFIcbq4PbfLRQgWGnz/"
+  
+  whoami:
+    image: traefik/whoami
+    labels:
+      - "traefik.http.routers.whoami.rule=Host(`$whoami`)"
+
   web:
     build:
       context: web
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.web.rule=Host(`khoa.htactive.com`)
-      - traefik.http.routers.web.entrypoints=websecure
-      - traefik.http.routers.web.tls.certresolver=myresolver
+      - "traefik.http.routers.web.rule=Host(`$web`)"
